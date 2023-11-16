@@ -88,7 +88,7 @@ HashReturn Keccak_HashInitialize(Keccak_HashInstance *hashInstance, unsigned int
   *                     in the least significant bits of the last byte (little-endian convention).
   *                     In this case, the (8 - @a databitLen mod 8) most significant bits
   *                     of the last byte are ignored.
-  * @param  databitLen  The number of input bits provided in the input data.
+  * @param  databitlen  The number of input bits provided in the input data.
   * @pre    In the previous call to Keccak_HashUpdate(), databitlen was a multiple of 8.
   * @return KECCAK_SUCCESS if successful, KECCAK_FAIL otherwise.
   */

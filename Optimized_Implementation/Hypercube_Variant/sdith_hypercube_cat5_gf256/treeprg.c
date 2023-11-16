@@ -61,6 +61,7 @@ EXPORT void sdith_tree_prg_seed_expand(TREE_PRG_CTX *key, void *out,
     memcpy(vec4[2].parent_seed, in_seeds + i + 2, PARAM_seed_size);
     vec4[3].node_idx = tweak + 3;
     memcpy(vec4[3].parent_seed, in_seeds + i + 3, PARAM_seed_size);
+    tweak += 4;
 
     void *dst4[4] = {out_seeds[i], out_seeds[i + 1], out_seeds[i + 2],
                      out_seeds[i + 3]};

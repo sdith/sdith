@@ -16,7 +16,7 @@ You are solely responsible for determining the appropriateness of using and dist
 #define CRYPTO_BYTES sizeof(signature_t)
 
 #define CRYPTO_ALGNAME "sdith_hypercube_cat3_gf256"
-#define CRYPTO_VERSION "1.00"
+#define CRYPTO_VERSION "1.01"
 
 int
 crypto_sign_keypair(unsigned char *pk, unsigned char *sk);

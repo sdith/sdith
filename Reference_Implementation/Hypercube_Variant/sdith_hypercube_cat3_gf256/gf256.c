@@ -130,13 +130,9 @@ uint8_t mul_gf256_table(uint8_t x, uint8_t y) {
   return sdith_gf256_dexp_table[l];
 }
 
-extern uint8_t dexp8_table_precomputed[];
-extern uint8_t dlog8_table_precomputed[];
-
 void gf256_create_log_tables() {
   // don't re-create the tables if they are already initialized
   if (sdith_gf256_dlog_table) return;
-#ifdef NO_PRECOMPUTE_TABLES
   uint8_t* dlog8_table = malloc(sizeof(uint8_t)*(1ul << 8));
   uint8_t* dexp8_table = malloc(sizeof(uint8_t)*(1ul << 8));
   // create the dlog table over gf2p8
@@ -156,8 +152,4 @@ void gf256_create_log_tables() {
 #endif
   sdith_gf256_dexp_table = dexp8_table;
   sdith_gf256_dlog_table = dlog8_table;
-#else
-  sdith_gf256_dexp_table = dexp8_table_precomputed;
-  sdith_gf256_dlog_table = dlog8_table_precomputed;
-#endif
 }

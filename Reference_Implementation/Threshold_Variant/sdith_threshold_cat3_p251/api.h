@@ -9,7 +9,7 @@
 #define CRYPTO_BYTES (PARAM_SIGNATURE_SIZEBYTES+sizeof(uint32_t))
 
 #define CRYPTO_ALGNAME "sdith_threshold_cat3_p251"
-#define CRYPTO_VERSION "1.00"
+#define CRYPTO_VERSION "1.01"
 
 /*************************************************
 * Name:        crypto_sign_keypair

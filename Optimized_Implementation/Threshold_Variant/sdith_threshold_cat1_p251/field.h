@@ -31,13 +31,7 @@ static inline void mat16cols_muladd(void* vz, const void* y, const void* vx, uin
 }
 
 // Operations in field extension
-#if PARAM_EXT_DEGREE == 8
-#define mul_points_ext(r,a,b) gf251to8_mul(r,a,b)
-#define add_points_ext(r,a,b) gf251to8_add(r,a,b)
-#define sub_points_ext(r,a,b) gf251to8_sub(r,a,b)
-#define mul_points_mixed(r,a,b) gf251to8_mul_gf251(r,a,b)
-#define eq_points_ext(a,b) gf251to8_eq(a,b)
-#elif PARAM_EXT_DEGREE == 4
+#if PARAM_EXT_DEGREE == 4
 #define mul_points_ext(r,a,b) gf251to4_mul(r,a,b)
 #define add_points_ext(r,a,b) gf251to4_add(r,a,b)
 #define sub_points_ext(r,a,b) gf251to4_sub(r,a,b)

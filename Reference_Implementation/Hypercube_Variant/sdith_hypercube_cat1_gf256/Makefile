@@ -20,7 +20,7 @@ else
 	HASH_MAKE_OPTIONS = PLATFORM=opt64
 endif
 CC = gcc
-CFLAGS = -W -Wall -O3 -fPIC -DNDEBUG -D${SEC_LEVEL} -std=c11
+CFLAGS = -W -Wall -O3 -fPIC -DNDEBUG -D${SEC_LEVEL}
 
 ifeq ($(VARIANT), avx2)
 	GF256_SRC = gf256.c gf2p32.c gf256-avx2-polytable-ct.c gf256-avx2.c gf256-avx2-gfni.c gf256-avx-pclmul.c
@@ -50,7 +50,7 @@ sign: ${SRC} ${FIELD_SRC} ${CRYPTO_SRC} ${SDITH_SRC} ${KAT_MAIN_SRC} libhash
 	-${CC} ${CFLAGS} ${AVXFLAGS} -o $@ ${SRC} ${FIELD_SRC} ${CRYPTO_SRC} ${SDITH_SRC} ${KAT_MAIN_SRC} -I. ${HASH_INCLUDE} -L${HASH_PATH} -lcrypto -lhash
 
 bench: ${SRC} ${FIELD_SRC} ${CRYPTO_SRC} ${SDITH_SRC} ${BENCH_MAIN_SRC} libhash
-	-${CC} ${CFLAGS} ${AVXFLAGS} -DBENCHMARK_CYCLES -o $@ ${SRC} ${FIELD_SRC} ${CRYPTO_SRC} ${SDITH_SRC} ${BENCH_MAIN_SRC} -I. ${HASH_INCLUDE} -L${HASH_PATH} -lcrypto -lhash -lm
+	-${CC} ${CFLAGS} ${AVXFLAGS} -o $@ ${SRC} ${FIELD_SRC} ${CRYPTO_SRC} ${SDITH_SRC} ${BENCH_MAIN_SRC} -I. ${HASH_INCLUDE} -L${HASH_PATH} -lcrypto -lhash -lm
 
 clean:
 	-rm -f *.o *.a sign bench

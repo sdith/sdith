@@ -112,13 +112,9 @@ EXPORT int p251_init_(__attribute__((unused)) int version) {
 uint8_t const* sdith_p251_dexp_table = nullptr;
 uint8_t const* sdith_p251_dlog_table = nullptr;
 
-extern uint8_t dexp8_table_precomputed[];
-extern uint8_t dlog8_table_precomputed[];
-
 void p251_create_log_tables() {
   // don't re-create the tables if they are already initialized
   if (sdith_p251_dlog_table) return;
-#ifdef NO_PRECOMPUTE_TABLES
   uint8_t* dlog8_table = malloc(sizeof(uint8_t)*251);
   uint8_t* dexp8_table = malloc(sizeof(uint8_t)*251);
   // create the dlog table over p251
@@ -138,8 +134,4 @@ void p251_create_log_tables() {
 #endif // NDEBUG
   sdith_p251_dexp_table = dexp8_table;
   sdith_p251_dlog_table = dlog8_table;
-#else
-  sdith_p251_dexp_table = dexp8_table_precomputed;
-  sdith_p251_dlog_table = dlog8_table_precomputed;
-#endif
 }

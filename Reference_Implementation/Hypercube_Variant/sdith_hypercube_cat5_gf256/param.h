@@ -12,9 +12,9 @@
 #endif
 
 #ifdef CAT_1
-#define PARAM_m 230   // code length
+#define PARAM_m 242   // code length
 #define PARAM_k 126   // code dimension
-#define PARAM_w 79    // hammimg weight
+#define PARAM_w 87    // hammimg weight
 #define PARAM_d 1     // twist
 #define PARAM_t 3     // number of challenge points per iteration
 #define PARAM_tau 17  // number of parallel repetitions
@@ -28,9 +28,9 @@
 #endif
 
 #ifdef CAT_3
-#define PARAM_m 352   // code length
-#define PARAM_k 193   // code dimension
-#define PARAM_w 120   // hammimg weight
+#define PARAM_m 376   // code length
+#define PARAM_k 220   // code dimension
+#define PARAM_w 114   // hammimg weight
 #define PARAM_d 2     // twist
 #define PARAM_t 3     // number of challenge points per iteration
 #define PARAM_tau 26  // number of parallel repetitions
@@ -44,9 +44,9 @@
 #endif
 
 #ifdef CAT_5
-#define PARAM_m 480   // code length
-#define PARAM_k 278   // code dimension
-#define PARAM_w 150   // hammimg weight
+#define PARAM_m 494   // code length
+#define PARAM_k 282   // code dimension
+#define PARAM_w 156   // hammimg weight
 #define PARAM_d 2     // twist
 #define PARAM_t 4     //
 #define PARAM_tau 34  // number of parallel repetitions

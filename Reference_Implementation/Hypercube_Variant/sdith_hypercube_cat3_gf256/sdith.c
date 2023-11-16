@@ -325,7 +325,7 @@ typedef struct mpc_share_struct {
   fpoly_t p_poly[PARAM_d][PAR_wd];
   fpoints_t a[PARAM_d][PARAM_t];
   fpoints_t b[PARAM_d][PARAM_t];
-  fpoints_t c[PARAM_d][PARAM_t];
+  fpoints_t c[PARAM_t];
 } mpc_share_t;
 
 void xor_equals(mpc_share_t* x, const mpc_share_t* y) {
@@ -357,7 +357,7 @@ void expand_mpc_share_from_seed(mpc_share_t* share, const seed_t seed) {
     for (uint64_t i = 0; i < PARAM_t; i++) {
       share->a[i_d][i] &= PAR_fpoint_mask;
       share->b[i_d][i] &= PAR_fpoint_mask;
-      share->c[i_d][i] &= PAR_fpoint_mask;
+      share->c[i] &= PAR_fpoint_mask;
     }
   }
   sdith_rng_free_xof_ctx(rng_ctx);
@@ -371,7 +371,7 @@ void expand_mpc_share_from_seed4(mpc_share_t** share, seed_t *seed) {
       for (uint64_t i = 0; i < PARAM_t; i++) {
         share[k]->a[i_d][i] &= PAR_fpoint_mask;
         share[k]->b[i_d][i] &= PAR_fpoint_mask;
-        share[k]->c[i_d][i] &= PAR_fpoint_mask;
+        share[k]->c[i] &= PAR_fpoint_mask;
       }
     }
   }
@@ -400,21 +400,19 @@ void expand_last_mpc_share_from_seed(mpc_share_t* share, const seed_t seed) {
  * @param iteration  : iteration between 0 and tau-1
  * @param leaf_idx   : leaf index between 0 and max_leaf
  */
-void commit_leaf(void* commitment, void const* leaf_seed, void const* leaf_rho, void const* salt, uint16_t iteration, uint16_t leaf_idx) {
+void commit_leaf(void* commitment, void const* leaf_seed, void const* salt, uint16_t iteration, uint16_t leaf_idx) {
   HASH_CTX* share_commit_ctx = sdith_hash_create_hash_ctx(HASH_COM);
   // H0(salt || e || i ...)
   sdith_hash_digest_update(share_commit_ctx, salt, PARAM_salt_size);
   sdith_hash_digest_update(share_commit_ctx, &iteration, sizeof(iteration));
   sdith_hash_digest_update(share_commit_ctx, &leaf_idx, sizeof(leaf_idx));
-  // H0(... || rho ...)
-  sdith_hash_digest_update(share_commit_ctx, leaf_rho, PARAM_rho_size);
   // H0(... || state)
   sdith_hash_digest_update(share_commit_ctx, leaf_seed, PARAM_seed_size);
   sdith_hash_final(share_commit_ctx, commitment);
   sdith_hash_free_hash_ctx(share_commit_ctx);
 }
 
-void commit4_leaf(void **commitment, void **leaf_seed, void **leaf_rho, void * salt, uint16_t iteration, uint16_t *leaf_idx) {
+void commit4_leaf(void **commitment, void **leaf_seed, void * salt, uint16_t iteration, uint16_t *leaf_idx) {
   HASH4_CTX* share_commit4_ctx = sdith_hash_create_hash4_ctx(HASH_COM);
   // H0(salt || e || i ...)
   void *salts[4] = {salt, salt, salt, salt};
@@ -423,8 +421,6 @@ void commit4_leaf(void **commitment, void **leaf_seed, void **leaf_rho, void * s
   sdith_hash4_digest_update(share_commit4_ctx, iters, sizeof(iteration));
   void *leaves[4] = {&leaf_idx[0], &leaf_idx[1], &leaf_idx[2], &leaf_idx[3]};
   sdith_hash4_digest_update(share_commit4_ctx, leaves, sizeof(uint16_t));
-  // H0(... || rho ...)
-  sdith_hash4_digest_update(share_commit4_ctx, leaf_rho, PARAM_rho_size);
   // H0(... || state)
   sdith_hash4_digest_update(share_commit4_ctx, leaf_seed, PARAM_seed_size);
   sdith_hash4_final(share_commit4_ctx, commitment);
@@ -439,7 +435,7 @@ void commit4_leaf(void **commitment, void **leaf_seed, void **leaf_rho, void * s
  * @param salt       : the global salt
  * @param iteration  : iteration between 0 and tau-1
  */
-void commit_last_leaf(void* commitment, void const* leaf_seed, void const* leaf_rho, mpc_share_t const* aux, void const* salt,
+void commit_last_leaf(void* commitment, void const* leaf_seed, mpc_share_t const* aux, void const* salt,
                       uint16_t iteration) {
   HASH_CTX* share_commit_ctx = sdith_hash_create_hash_ctx(HASH_COM);
   // H0(salt || e || i ...)
@@ -447,12 +443,10 @@ void commit_last_leaf(void* commitment, void const* leaf_seed, void const* leaf_
   sdith_hash_digest_update(share_commit_ctx, &iteration, sizeof(iteration));
   uint16_t leaf_idx = (1 << PARAM_D) - 1;
   sdith_hash_digest_update(share_commit_ctx, &leaf_idx, sizeof(leaf_idx));
-  // H0(... || rho ...)
-  sdith_hash_digest_update(share_commit_ctx, leaf_rho, PARAM_rho_size);
   // H0(... || state || s_A || q_poly || p_poly || c)
   sdith_hash_digest_update(share_commit_ctx, leaf_seed, PARAM_seed_size);
   sdith_hash_digest_update(share_commit_ctx, aux, PARAM_k + PARAM_d * PAR_wd * 2);
-  sdith_hash_digest_update(share_commit_ctx, aux->c, PARAM_d * PARAM_t * sizeof(fpoints_t));
+  sdith_hash_digest_update(share_commit_ctx, aux->c, PARAM_t * sizeof(fpoints_t));
   sdith_hash_final(share_commit_ctx, commitment);
   sdith_hash_free_hash_ctx(share_commit_ctx);
 }
@@ -465,7 +459,7 @@ void commit_last_leaf(void* commitment, void const* leaf_seed, void const* leaf_
  * @param salt       : the global salt
  * @param iteration  : iteration between 0 and tau-1
  */
-void commit_last_leaf2(void* commitment, void const* leaf_seed, void const* leaf_rho, aux_share_t const* aux, void const* salt,
+void commit_last_leaf2(void* commitment, void const* leaf_seed, aux_share_t const* aux, void const* salt,
                       uint16_t iteration) {
   HASH_CTX* share_commit_ctx = sdith_hash_create_hash_ctx(HASH_COM);
   // H0(salt || e || i ...)
@@ -473,12 +467,10 @@ void commit_last_leaf2(void* commitment, void const* leaf_seed, void const* leaf
   sdith_hash_digest_update(share_commit_ctx, &iteration, sizeof(iteration));
   uint16_t leaf_idx = (1 << PARAM_D) - 1;
   sdith_hash_digest_update(share_commit_ctx, &leaf_idx, sizeof(leaf_idx));
-  // H0(... || rho ...)
-  sdith_hash_digest_update(share_commit_ctx, leaf_rho, PARAM_rho_size);
   // H0(... || state || s_A || q_poly || p_poly || c)
   sdith_hash_digest_update(share_commit_ctx, leaf_seed, PARAM_seed_size);
   sdith_hash_digest_update(share_commit_ctx, aux, PARAM_k + PARAM_d * PAR_wd * 2);
-  sdith_hash_digest_update(share_commit_ctx, aux->c, PARAM_d * PARAM_t * sizeof(fpoints_t));
+  sdith_hash_digest_update(share_commit_ctx, aux->c, PARAM_t * sizeof(fpoints_t));
   sdith_hash_final(share_commit_ctx, commitment);
   sdith_hash_free_hash_ctx(share_commit_ctx);
 }
@@ -532,15 +524,10 @@ void expand_seed_binary_tree_bfs(sdith_full_key_t const* sk, seed_t root_seed,
   // expand the leaf states (except the last one) from their seed and update the sum and the main shares
   mpc_share_t cur_share;
   for (uint64_t i = 0; i < num_leafs - 1; i += 4) {
-    seed_t leaf_seed[4];
-    uint8_t leaf_rho[4][PARAM_rho_size];
-    void *leaf_rho_ptr[4] = {leaf_rho[0], leaf_rho[1], leaf_rho[2], leaf_rho[3]};
-    sdith_tree_prg_leaf_expand4(tree_ctx, &leaf_level[i], leaf_seed, (uint8_t**)leaf_rho_ptr);
-    
-    void *leaf_seed_ptr[4] = {leaf_seed[0], leaf_seed[1], leaf_seed[2], leaf_seed[3]};
+    void *leaf_seed_ptr[4] = {leaf_level[i], leaf_level[i+1], leaf_level[i+2], leaf_level[i+3]};
     uint16_t idx[4] = {i, i+1, i+2, i+3};
     void *commits_ptr[4] = {commits[i], commits[i+1], commits[i+2], commits[i+3]};
-    commit4_leaf((void**)commits_ptr, (void**)leaf_seed_ptr, (void**)leaf_rho_ptr, salt, iteration, idx);
+    commit4_leaf((void**)commits_ptr, (void**)leaf_seed_ptr, salt, iteration, idx);
 
     mpc_share_t shares[4];
     memset(shares, 0, sizeof(shares));
@@ -569,13 +556,9 @@ void expand_seed_binary_tree_bfs(sdith_full_key_t const* sk, seed_t root_seed,
   }
   // generate the last leaf share
   {
-    seed_t leaf_seed;
-    uint8_t leaf_rho[PARAM_rho_size];
-    sdith_tree_prg_leaf_expand(tree_ctx, leaf_level[num_leafs - 1], leaf_seed, leaf_rho);
-
     // expand the random part from the seed
     memset(&cur_share, 0, sizeof(mpc_share_t));
-    expand_last_mpc_share_from_seed(&cur_share, leaf_seed);
+    expand_last_mpc_share_from_seed(&cur_share, leaf_level[num_leafs - 1]);
     xor_equals(aux, &cur_share);
     // correct the current share so that the sum is equal to the plaintext
 
@@ -583,13 +566,14 @@ void expand_seed_binary_tree_bfs(sdith_full_key_t const* sk, seed_t root_seed,
     memcpy(sum_share->q_poly, sk->q_poly, PARAM_d * PAR_wd);
     memcpy(sum_share->p_poly, sk->p_poly, PARAM_d * PAR_wd);
     // cur_share.c = aux.c ^ (aux.a * aux.b)  element wise
-    for (uint64_t i_d = 0; i_d < PARAM_d; ++i_d) {
-      for (uint64_t i = 0; i < PARAM_t; i++) {
+    for (uint64_t i = 0; i < PARAM_t; i++) {
+      fpoints_t dot_a_b = 0;
+      for (uint64_t i_d = 0; i_d < PARAM_d; ++i_d) {
         sum_share->a[i_d][i] = aux->a[i_d][i];
         sum_share->b[i_d][i] = aux->b[i_d][i];
-        sum_share->c[i_d][i] = fpoints_mul_ct(aux->a[i_d][i], aux->b[i_d][i]);
-        cur_share.c[i_d][i] = sum_share->c[i_d][i] ^ aux->c[i_d][i];
+        dot_a_b ^= fpoints_mul_ct(aux->a[i_d][i], aux->b[i_d][i]);
       }
+      cur_share.c[i] = dot_a_b ^ aux->c[i];
     }
     // cur_share.xa = aux.xa ^ sk.xa
     for (uint64_t i = 0; i < PARAM_k; i++) {
@@ -613,7 +597,7 @@ void expand_seed_binary_tree_bfs(sdith_full_key_t const* sk, seed_t root_seed,
 #endif
 
     // commit to the last leaf (sha3 commitment)
-    commit_last_leaf(commits[num_leafs - 1], leaf_seed, leaf_rho, aux, salt, iteration);
+    commit_last_leaf(commits[num_leafs - 1], leaf_level[num_leafs - 1], aux, salt, iteration);
   }
 //  #ifndef NDEBUG
 //    for (uint64_t i=0; i<num_leafs; ++i) {
@@ -673,8 +657,7 @@ void walk_tree_prg_bfs(const seed_t root_seed, const salt_t salt,
                        seed_t tree_prg_seeds[PARAM_D],
                        commit_t chal_commit) {
   const uint64_t num_leafs = (1ul << PARAM_D);
-  seed_t *const seeds;
-  posix_memalign((void**)&seeds, 32, PARAM_seed_size * 3);
+  seed_t *const seeds = (seed_t*) aligned_alloc(32, PARAM_seed_size * 3);
   uint8_t *const prev_seed = seeds[0];
   seed_t *const cur_seeds = seeds + 1;
 
@@ -703,17 +686,10 @@ void walk_tree_prg_bfs(const seed_t root_seed, const salt_t salt,
   // finally, the challenge seed is the last live seed
   ASSERT_DRAMATICALLY(current_tweak == (1 << PARAM_D) + path, "Bug!!")
   // finally, the challenge seed is the last live seed
-  // memcpy(chal_seed, prev_seed, params::seed_size);
-  uint8_t const* const chal_seed = prev_seed;
-
-  seed_t leaf_seed;
-  uint8_t leaf_rho[PARAM_rho_size];
-  sdith_tree_prg_leaf_expand(tree_ctx, (void*)chal_seed, leaf_seed, leaf_rho);
-
   if (path == num_leafs - 1) {
-    commit_last_leaf(chal_commit, leaf_seed, leaf_rho, aux, salt, iteration);
+    commit_last_leaf(chal_commit, prev_seed, aux, salt, iteration);
   } else {
-    commit_leaf(chal_commit, leaf_seed, leaf_rho, salt, iteration, path);
+    commit_leaf(chal_commit, prev_seed, salt, iteration, path);
   }
   // #ifndef NDEBUG
   //   for (uint64_t i=0; i<params::D; ++i) {
@@ -742,10 +718,10 @@ void expand_seed_binary_tree_with_hint_bfs(seed_t *seed_hint, uint32_t hint,
                                            uint8_t iteration, commit_t com, aux_share_t const* aux,
                                            mpc_share_t (*main_party_shares)[/* N= */ 2]) {
   const uint64_t num_leafs = (1ul << PARAM_D);
-  seed_t *const seeds;
-  posix_memalign((void**)&seeds, 32, num_leafs * PARAM_seed_size * 2);
-  commit_t *const commits;
-  posix_memalign((void**)&commits, 32, num_leafs * PARAM_commit_size);
+  seed_t *const seeds =
+      (seed_t*)aligned_alloc(32, num_leafs * PARAM_seed_size * 2);
+  commit_t *const commits =
+      (commit_t*)aligned_alloc(32, num_leafs * PARAM_commit_size);
 
   // Initialize TreePRG state
   TREE_PRG_CTX* tree_ctx = sdith_create_tree_prg_ctx(salt);
@@ -778,15 +754,10 @@ void expand_seed_binary_tree_with_hint_bfs(seed_t *seed_hint, uint32_t hint,
   // expand the leaf states (except the last one) from their seed and update the sum and the main shares
   mpc_share_t cur_share;
   for (uint64_t i = 0; i < num_leafs - 1; i += 4) {
-    seed_t leaf_seed[4];
-    uint8_t leaf_rho[4][PARAM_rho_size];
-    void *leaf_rho_ptr[4] = {leaf_rho[0], leaf_rho[1], leaf_rho[2], leaf_rho[3]};
-    sdith_tree_prg_leaf_expand4(tree_ctx, &leaf_level[i], leaf_seed, (uint8_t**)leaf_rho_ptr);
-    
-    void *leaf_seed_ptr[4] = {leaf_seed[0], leaf_seed[1], leaf_seed[2], leaf_seed[3]};
+    void *leaf_seed_ptr[4] = {leaf_level[i], leaf_level[i+1], leaf_level[i+2], leaf_level[i+3]};
     uint16_t idx[4] = {i, i+1, i+2, i+3};
     void *commits_ptr[4] = {commits[i], commits[i+1], commits[i+2], commits[i+3]};
-    commit4_leaf((void**)commits_ptr, (void**)leaf_seed_ptr, (void**)leaf_rho_ptr, (void*)salt, iteration, idx);
+    commit4_leaf((void**)commits_ptr, (void**)leaf_seed_ptr, (void*)salt, iteration, idx);
 
     mpc_share_t shares[4];
     memset(shares, 0, sizeof(shares));
@@ -812,22 +783,18 @@ void expand_seed_binary_tree_with_hint_bfs(seed_t *seed_hint, uint32_t hint,
   memcpy(commits[hint], com, PARAM_commit_size);
   // generate the last leaf commitment and share
   if (hint != num_leafs - 1) {
-    seed_t leaf_seed;
-    uint8_t leaf_rho[PARAM_rho_size];
-    sdith_tree_prg_leaf_expand(tree_ctx, leaf_level[num_leafs - 1], leaf_seed, leaf_rho);
-
     // commitment of the last leaf is from seed + aux
-    commit_last_leaf2(commits[num_leafs - 1], leaf_seed, leaf_rho, aux, salt, iteration);
+    commit_last_leaf2(commits[num_leafs - 1], leaf_level[num_leafs - 1], aux, salt, iteration);
 
     const uint32_t leaf = num_leafs - 1;
     // expand the random part from the seed
     memset(&cur_share, 0, sizeof(mpc_share_t));
-    expand_last_mpc_share_from_seed(&cur_share, leaf_seed);
+    expand_last_mpc_share_from_seed(&cur_share, leaf_level[num_leafs - 1]);
     // correct the current share using the aux
     memcpy(cur_share.s_A, aux->s_A, PARAM_k);
     memcpy(cur_share.q_poly, aux->q_poly, PARAM_d * PAR_wd);
     memcpy(cur_share.p_poly, aux->p_poly, PARAM_d * PAR_wd);
-    memcpy(cur_share.c, aux->c, PARAM_d * PARAM_t * sizeof(fpoints_t));
+    memcpy(cur_share.c, aux->c, PARAM_t * sizeof(fpoints_t));
     // add it to the main parties
     for (uint64_t j = 0; j < PARAM_D; ++j) {
       if ((((leaf ^ hint) >> (PARAM_D - 1 - j)) & 1) == 1) {
@@ -884,8 +851,7 @@ void mpc_compute_plain_broadcasts(mpc_share_t const *share, mpc_helper_t const h
                             sdith_full_pubkey_t const* pk, fpoints_t alphas[PARAM_d][PARAM_t],
                             uint32_t betas [PARAM_d][PARAM_t]) {
   // x = s_A || s_B
-  uint8_t* x;
-  posix_memalign((void**)&x, 32, PARAM_k + PAR_ha_nslice * 128);
+  uint8_t* x = (uint8_t*)aligned_alloc(32, PARAM_k + PAR_ha_nslice * 128);
   uint8_t* s_A = x;
   uint8_t* s_B = x + PARAM_k;
   memcpy(s_A, share->s_A, PARAM_k);
@@ -925,8 +891,7 @@ void mpc_compute_communications(mpc_share_t const* share, bool with_offsets, mpc
                                 const fpoints_t betas[PARAM_d][PARAM_t], fpoints_t alpha[PARAM_d][PARAM_t], fpoints_t beta[PARAM_d][PARAM_t],
                                 fpoints_t v[PARAM_t], bool CONSTANT_TIME) {
   // x = s_A || s_B
-  uint8_t* x;
-  posix_memalign((void**)&x, 32, PARAM_k + PAR_ha_nslice * 128);
+  uint8_t* x = (uint8_t*)aligned_alloc(32, PARAM_k + PAR_ha_nslice * 128);
   uint8_t* s_A = x;
   uint8_t* s_B = x + PARAM_k;
   memcpy(s_A, share->s_A, PARAM_k);
@@ -987,16 +952,21 @@ void mpc_compute_communications(mpc_share_t const* share, bool with_offsets, mpc
       beta[i_d][i_t] = share->b[i_d][i_t] ^ s_r[i_t];
 
       if (CONSTANT_TIME) {
-        v[i_t] ^= share->c[i_d][i_t] ^ fpoints_mul_ct(sh_p_r[i_t], helper[i_d].eps_f_r[i_t]) ^
+        v[i_t] ^= fpoints_mul_ct(sh_p_r[i_t], helper[i_d].eps_f_r[i_t]) ^
                  fpoints_mul_ct(alphas[i_d][i_t], share->b[i_d][i_t]) ^ fpoints_mul_ct(betas[i_d][i_t], share->a[i_d][i_t]) ^
                  (with_offsets ? fpoints_mul_ct(alphas[i_d][i_t], betas[i_d][i_t]) : 0);
       } else {
-        v[i_t] ^= share->c[i_d][i_t] ^ fpoints_mul(sh_p_r[i_t], helper[i_d].eps_f_r[i_t]) ^
+        v[i_t] ^= fpoints_mul(sh_p_r[i_t], helper[i_d].eps_f_r[i_t]) ^
                  fpoints_mul(alphas[i_d][i_t], share->b[i_d][i_t]) ^ fpoints_mul(betas[i_d][i_t], share->a[i_d][i_t]) ^
                  (with_offsets ? fpoints_mul(alphas[i_d][i_t], betas[i_d][i_t]) : 0);
       }
     }
   }
+
+  for (uint64_t i_t = 0; i_t < PARAM_t; i_t++) {
+    v[i_t] ^= share->c[i_t];
+  }
+
   free(x);
 }
 

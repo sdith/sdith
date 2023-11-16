@@ -6,9 +6,9 @@
 
 // SD Parameters
 #define PARAM_FIELD_SIZE 256
-#define PARAM_CODE_LENGTH 230
+#define PARAM_CODE_LENGTH 242
 #define PARAM_CODE_DIMENSION 126
-#define PARAM_CODE_WEIGHT 79
+#define PARAM_CODE_WEIGHT 87
 
 // MPC Parameters
 #define PARAM_NB_EVALS_PER_POLY 7

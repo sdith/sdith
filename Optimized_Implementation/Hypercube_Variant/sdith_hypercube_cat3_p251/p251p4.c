@@ -7,19 +7,13 @@ static int sdith_p251_tables_initialized = 0;
 static uint8_t sdith_p251_logtable[256];
 static uint8_t sdith_p251_exptable[251];
 
-#ifdef NO_PRECOMPUTE_TABLES
 static int sdith_p251p2_tables_initialized = 0;
 uint16_t sdith_p251p2_logtable[65536];
 uint16_t sdith_p251p2_exptable[SDITH_ORDER_P251P2+1];
+
 static int sdith_p251p4_tables_initialized = 0;
 uint32_t sdith_p251p4_log1table[SDITH_ORDER_P251P2+1];     // for x=u+Y: table of log16(u) -> log32(u+Y)
 uint16_t sdith_p251p4_exp1table[SDITH_PP_POWER_P251P4][2];  // table of p -> (log16(u),log16(v))  where gen32^p = u+vY
-#else
-extern uint16_t sdith_p251p2_logtable[65536];
-extern uint16_t sdith_p251p2_exptable[SDITH_ORDER_P251P2+1];
-extern uint32_t sdith_p251p4_log1table[SDITH_ORDER_P251P2+1]; 
-extern uint16_t sdith_p251p4_exp1table[SDITH_PP_POWER_P251P4][2];
-#endif
 
 /** @brief naive multiplication in p251p2 */
 uint16_t p251p2_mul_naive(uint16_t x, uint16_t y) {
@@ -130,7 +124,6 @@ void create_p251_log_tables() {
 }
 
 void create_p251p2_log_tables() {
-#ifdef NO_PRECOMPUTE_TABLES
   if (sdith_p251p2_tables_initialized) return;
   create_p251_log_tables();
   sdith_p251p2_exptable[SDITH_ORDER_P251P2] = 0;
@@ -154,11 +147,9 @@ void create_p251p2_log_tables() {
     sdith_p251p2_logtable[sdith_p251p2_exptable[i]] = i;
   }
   sdith_p251p2_tables_initialized = 1;
-#endif
 }
 
 void create_p251p4_log_tables() {
-#ifdef NO_PRECOMPUTE_TABLES
   if (sdith_p251p4_tables_initialized) return;
   create_p251p2_log_tables();
   uint32_t z = 1;
@@ -181,21 +172,6 @@ void create_p251p4_log_tables() {
     // sdith_p251p2_exptable[ldiff], "XXXX")
   }
   sdith_p251p4_tables_initialized = 1;
-#endif
-
-  // printf("uint16_t sdith_p251p4_log1table[63001] = {");
-  // for (int i = 0; i < 63001; ++i) {
-  //   printf("%u, ", sdith_p251p4_log1table[i]);
-  // }
-  // printf("};\n\n");
-
-  // printf("uint16_t sdith_p251p4_exp1table[63002][2] = {");
-  // for (int i = 0; i < 63002; ++i) {
-  //   printf("{%u, %u}, ", sdith_p251p4_exp1table[i][0], sdith_p251p4_exp1table[i][1]);
-  // }
-  // printf("};\n\n");
-
-  // abort();
 }
 
 uint32_t p251p4_dlog_pow_l32(uint32_t logx, uint32_t p) {

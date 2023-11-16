@@ -41,7 +41,7 @@
  ****************************************************/
 
 #define PARAM_SIGNATURE_SIZEBYTES (                     \
-    2*PARAM_DIGEST_SIZE + PARAM_SALT_SIZE +             \
+    PARAM_DIGEST_SIZE + PARAM_SALT_SIZE +             \
     + PARAM_COMPRESSED_BR_SIZE                          \
     + PARAM_NB_EXECUTIONS*PARAM_NB_REVEALED*(           \
         PARAM_WIT_SHORT_SIZE + PARAM_CORR_SHORT_SIZE    \

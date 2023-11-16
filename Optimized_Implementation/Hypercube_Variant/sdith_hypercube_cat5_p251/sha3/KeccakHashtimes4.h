@@ -75,7 +75,7 @@ HashReturn Keccak_HashInitializetimes4(Keccak_HashInstancetimes4 *hashInstance, 
   * Function to give input data to be absorbed.
   * @param  hashInstance    Pointer to the hash instance initialized by Keccak_HashInitialize().
   * @param  data        Array of 4 pointers to the input data.
-  * @param  databitLen  The number of input bits provided in the input data, must be a multiple of 8.
+  * @param  databitlen  The number of input bits provided in the input data, must be a multiple of 8.
   * @pre    @a databitlen is a multiple of 8.
   * @return SUCCESS if successful, FAIL otherwise.
   */

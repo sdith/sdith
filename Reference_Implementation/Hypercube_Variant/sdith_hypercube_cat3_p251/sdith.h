@@ -70,11 +70,11 @@ typedef struct {
   fpoly_t p_poly[PARAM_d][PAR_wd];
 } sdith_full_key_t;
 
-typedef struct aux_share_struct {
-  uint8_t s_A[PARAM_k];
-  uint8_t q_poly[PARAM_d][PAR_wd];
-  uint8_t p_poly[PARAM_d][PAR_wd];
-  uint32_t c[PARAM_d][PARAM_t];
+typedef struct __attribute__((__packed__)) aux_share_struct {
+  fsd_t s_A[PARAM_k];
+  fpoly_t q_poly[PARAM_d][PAR_wd];
+  fpoly_t p_poly[PARAM_d][PAR_wd];
+  fpoints_t c[PARAM_t];
 } aux_share_t;
 
 typedef struct signature_struct {
