@@ -8,6 +8,7 @@ void expand_view_challenge_hash(uint16_t* opened_views, const uint8_t* digest, u
     xof_context entropy_ctx;
     xof_init(&entropy_ctx);
     xof_update(&entropy_ctx, digest, PARAM_DIGEST_SIZE);
+    xof_final(&entropy_ctx);
     samplable_t entropy = xof_to_samplable(&entropy_ctx);
 
     uint16_t ind = 0;
