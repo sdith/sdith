@@ -1,0 +1,62 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  cmake-build-test:
+    runs-on: ubuntu-latest
+    #container: ngama75/spqlios-ci:latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: install deps
+      run: sudo apt install libssl-dev libgtest-dev libbenchmark-dev
+
+    - name: Configure CMake Release
+      run: rm -rf build-release; cmake -B build-release -DCMAKE_BUILD_TYPE=Release
+
+    - name: Build Release
+      run: cmake --build build-release
+
+    - name: Test Release
+      working-directory: build-release
+      run: ctest --output-on-failure
+
+    - name: Configure CMake Debug
+      run: rm -rf build-debug; cmake -B build-debug -DCMAKE_BUILD_TYPE=Debug
+
+    - name: Build Debug
+      run: cmake --build build-debug
+
+    - name: Test Debug
+      working-directory: build-debug
+      run: ctest --output-on-failure
+
+  keygen-ct-gate:
+    runs-on: ubuntu-latest
+    # ctgrind (valgrind memcheck) gate for constant-time keygen. Runs ONLY the
+    # keygen gate (ct_keygen_valgrind_*), not the broader unsuppressed ct_valgrind_*
+    # tests. Meaningful on the avx table, which the runner already provides (the
+    # main job runs the avx unittest on the same class of runner).
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: install deps
+      run: sudo apt install libssl-dev libgtest-dev libbenchmark-dev valgrind
+
+    - name: Configure CMake (valgrind)
+      run: rm -rf build-ct; cmake -B build-ct -DCMAKE_BUILD_TYPE=Release -DWITH_VALGRIND=ON
+
+    - name: Build keygen ct gate
+      run: cmake --build build-ct --target ct_keygen_CAT1_SHORT ct_keygen_CAT1B ct_keygen_CAT3A ct_keygen_CAT3B ct_keygen_CAT5A ct_keygen_CAT5B
+
+    - name: Run keygen ct gate
+      working-directory: build-ct
+      run: ctest -R ct_keygen_valgrind --output-on-failure
+

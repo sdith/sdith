@@ -1,0 +1,65 @@
+#!/bin/sh
+# check_full_kats - manual full-KAT guard for vole-sd (round-3 VOLEitH).
+#
+# Builds + runs the 12 PQCGenKat_<SET> NIST generators (full 100-record KAT), SHA-256s each
+# .rsp, and compares against the committed kat_r3/full_kat_hashes.txt. This is the thorough
+# check; it is deliberately NOT wired into CI because the full KAT is expensive to run on every
+# commit. The cheap per-commit guard is the mini-KAT (the "mini_kat" ctest), which also range-
+# checks these .rsp files against the library's current key and signature sizes.
+#
+# KATs are implementation-independent (ref == avx2, gated by unittest), so the committed hashes
+# are valid regardless of the machine that produced them.
+#
+# Usage (from the repo root; BUILD_DIR must already be cmake-configured with -DBUILD_KATS=ON):
+#   utils/check_full_kats [BUILD_DIR]            # compare against committed hashes (default: build)
+#   utils/check_full_kats [BUILD_DIR] --update   # (re)write kat_r3/full_kat_hashes.txt
+#
+# After an *intentional* KAT change, run with --update and commit the new hashes.
+set -e
+
+BUILD="${1:-build}"
+MODE="${2:-check}"
+SETS="CAT1_SHORT CAT1_FAST CAT1_SHORT_CIPHERPOW CAT1_FAST_CIPHERPOW \
+      CAT3_SHORT CAT3_FAST CAT3_SHORT_CIPHERPOW CAT3_FAST_CIPHERPOW \
+      CAT5_SHORT CAT5_FAST CAT5_SHORT_CIPHERPOW CAT5_FAST_CIPHERPOW"
+GOLDEN="kat_r3/full_kat_hashes.txt"
+TMP="$(mktemp)"
+trap 'rm -f "$TMP"' EXIT
+
+sha256() { openssl dgst -sha256 "$1" | awk '{print $NF}'; }
+
+# Build all 12 generators (no-op if already built).
+targets=""
+for s in $SETS; do targets="$targets PQCGenKat_$s"; done
+echo "building generators in $BUILD ..."
+cmake --build "$BUILD" --target $targets >/dev/null
+
+# Run each generator and hash its .rsp.
+for s in $SETS; do
+  d="$BUILD/kats_folder/SDITH_$s"
+  ( cd "$d" && rm -f ./*.rsp ./*.req && "./PQCGenKat_$s" >/dev/null )
+  rsp="$(ls "$d"/*.rsp)"
+  printf '%s %s %s\n' "SDITH_$s" "$(basename "$rsp")" "$(sha256 "$rsp")" >>"$TMP"
+done
+
+if [ "$MODE" = "--update" ]; then
+  mkdir -p "$(dirname "$GOLDEN")"
+  mv "$TMP" "$GOLDEN"
+  trap - EXIT
+  echo "wrote $GOLDEN:"
+  cat "$GOLDEN"
+  exit 0
+fi
+
+if [ ! -f "$GOLDEN" ]; then
+  echo "FAIL: $GOLDEN missing (run: utils/check_full_kats $BUILD --update)"
+  exit 1
+fi
+
+if diff -u "$GOLDEN" "$TMP"; then
+  echo "OK: all 12 full KATs match $GOLDEN"
+  exit 0
+else
+  echo "FAIL: full KATs differ from $GOLDEN (see diff above)"
+  exit 1
+fi

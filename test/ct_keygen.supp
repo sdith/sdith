@@ -1,0 +1,16 @@
+# Valgrind/memcheck suppressions for the keygen constant-time gate (ct_keygen.c).
+#
+# The position sampler draws a uniform index by rejection sampling:
+#     do { pos = rng(); } while (pos >= npw_max);
+# The loop condition branches on pos, which is derived from the secret sk_seed,
+# so memcheck flags it. This is an accepted, secret-independent timing channel:
+# a rejected draw is discarded and independent of the accepted one, so the number
+# of iterations reveals nothing about the solution. Everything downstream of the
+# accepted draw (the reduction, the H-row selection, the encoding) must stay
+# constant-time and is NOT suppressed.
+{
+   sdith_keygen_sampler_rejection_loop_accepted_leak
+   Memcheck:Cond
+   fun:rsd_generate_random_instance_ref
+   fun:sdith_keygen
+}
