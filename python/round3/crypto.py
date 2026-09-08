@@ -195,9 +195,9 @@ def cat1_proofow_rng(hash_piop, counter, num_bytes):
 # ---- CAT III (lambda=192): Rijndael-256-256, SHAKE256 ----
 # The seed tree and commitment still use the truncated Enc (24-byte seeds and
 # commitments). The VOLE keystream and the matrix PRG use the full 256-bit
-# Rijndael-256 output, same as CAT V (vole-sd #234: "revert the cat3 generator
-# to output plain rijndael256"). Only the low rsd_codim / lambda bits are kept
-# downstream, so the extra bytes per block are just consumed from the stream.
+# Rijndael-256 output, same as CAT V. Only the low rsd_codim / lambda bits are
+# kept downstream, so the extra bytes per block are just consumed from the
+# stream.
 
 def cat3_ggm_seed_rng(salt, key, node_index, theta):
     ptx = _domain_sep_ptx(salt, node_index, theta, 24)

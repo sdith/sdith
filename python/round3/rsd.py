@@ -28,7 +28,7 @@ def _h_random_row(h_prg, params):
     contiguous in the PRG stream, matching the C matrix_rng which seeds
     each row at counter row_index * blocks_per_row. The cipher block is
     16 bytes for cat1 (AES-128) and 32 bytes for cat3/cat5 (full
-    Rijndael-256, vole-sd #234), so the read aligns to that, not lambda.
+    Rijndael-256), so the read aligns to that, not lambda.
     """
     block_bytes = 16 if params.lambda_ == 128 else 32
     n_blocks = (params.rsd_codim + block_bytes * 8 - 1) // (block_bytes * 8)

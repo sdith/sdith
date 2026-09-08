@@ -1,5 +1,5 @@
 #!/bin/sh
-# check_full_kats - manual full-KAT guard for vole-sd (round-3 VOLEitH).
+# check_full_kats - manual full-KAT guard for SDitH (round-3 VOLEitH).
 #
 # Builds + runs the 12 PQCGenKat_<SET> NIST generators (full 100-record KAT), SHA-256s each
 # .rsp, and compares against the committed kat_r3/full_kat_hashes.txt. This is the thorough

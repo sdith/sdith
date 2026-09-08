@@ -1,5 +1,5 @@
 /*
- * Constant-time validation for SDitH v2 (vole-sd)
+ * Constant-time validation for SDitH v2
  *
  * Two complementary approaches:
  *

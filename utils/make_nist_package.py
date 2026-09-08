@@ -6,6 +6,7 @@ The package has one self-contained folder per parameter set, twice:
     <out>/Reference_Implementation/<set>/    portable C only, -DONLY_REF_IMPLEMENTATION
     <out>/Optimized_Implementation/<set>/    same code plus the avx2/aes-ni backend
     <out>/KAT/sdith_<set>/PQCsignKAT_<sk>.{req,rsp}
+    <out>/Supporting_Documentation/specifications.pdf
 
 Each implementation folder is standalone: it carries its own CMakeLists.txt, a copy
 of lib/aes and lib/sha3, the src/ tree, the bench_sdith C benchmark and the NIST KAT
@@ -57,6 +58,7 @@ AVX_RE = re.compile(r"avx", re.IGNORECASE)
 
 REFERENCE = "Reference_Implementation"
 OPTIMIZED = "Optimized_Implementation"
+SPEC_PDF = "docs/sdith-v3.0.pdf"
 
 
 class Category:
@@ -105,7 +107,7 @@ class Repo:
         self.root = root
         for probe in ("CMakeLists.txt", "src/sdith_signature.h", "lib/aes/CMakeLists.txt"):
             if not (root / probe).exists():
-                die("%s does not look like the vole-sd repository (%s missing)" % (root, probe))
+                die("%s does not look like the SDitH repository (%s missing)" % (root, probe))
         top = (root / "CMakeLists.txt").read_text()
         aes = (root / "lib/aes/CMakeLists.txt").read_text()
         sha3 = (root / "lib/sha3/CMakeLists.txt").read_text()
@@ -402,6 +404,8 @@ SDitH, each as two standalone folders:
   Reference_Implementation/<set>/   portable C only (built with -DONLY_REF_IMPLEMENTATION)
   Optimized_Implementation/<set>/   the same code plus an avx2/aes-ni backend for x86-64
 
+The scheme is specified in Supporting_Documentation/specifications.pdf.
+
 Both produce identical keys and signatures; the optimized folder simply picks the faster
 backend at run time via __builtin_cpu_supports, so its binaries also run on machines
 without avx2.
@@ -516,6 +520,18 @@ def emit_generator(repo, dest, cat):
     (gen / "CMakeLists.txt").write_text(
         GENERATOR_CMAKE.format(algname=cat.algname, kat_target=cat.kat_target)
     )
+
+
+def emit_supporting_documentation(repo, out):
+    """Copy the specification into <out>/Supporting_Documentation/, under the name NIST
+    expects.  The repository keeps it under docs/ with a version in the file name."""
+    src = repo.root / SPEC_PDF
+    if not src.exists():
+        die("the specification is missing (%s)" % src)
+    dest = out / "Supporting_Documentation"
+    dest.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(src, dest / "specifications.pdf")
+    return dest
 
 
 def emit_implementation(repo, out, cat, flavour):
@@ -712,6 +728,8 @@ def main():
         for flavour in (REFERENCE, OPTIMIZED):
             folders[(c.token, flavour)] = emit_implementation(repo, out, c, flavour)
         note("%s/{%s,%s}" % (c.dirname, "Reference", "Optimized"))
+    emit_supporting_documentation(repo, out)
+    note("Supporting_Documentation/specifications.pdf")
     print()
 
     # C++ never belongs in a NIST package: neither as a source file, nor as a language

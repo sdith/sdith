@@ -1,24 +1,24 @@
 # SDitH round 3 — Python reference
 
 A readable Python implementation of the round-3 SDitH signature scheme, built
-on the round2 code. It follows `../round3-draft.pdf` and is meant for clarity
-and KAT checking, not speed. Covers all six parameter sets (CAT1/3/5,
-short/fast).
+on the round2 code. It follows the specification in `../../docs/sdith-v3.0.pdf`
+and is meant for clarity and KAT checking, not speed. It covers the six
+parameter sets (CAT1/3/5, short/fast), each in both proof-of-work variants, so
+twelve sets in total.
 
 ## Changes from round2
 
 - BAVC commitments are sub-hashed: a per-repetition digest over that
   repetition's N seed commitments, then a hash over the tau digests (round2
   used one flat hash). `vole.py`.
-- Seed-tree domain separation appends the tweak to the truncated salt,
-  `ptx = Trunc_theta(salt) || MapToBits(tweak)`, instead of xor-ing it in.
-  `crypto.py`, `params.py`.
-- The seed commitments and the VOLE keystream are salted from a pair of tweaked
-  salts (`sdith.compute_tweaked_salts`): the global salt with its low 24 bits
-  cleared for the tweak and its top bits set to a per-family prefix. The VOLE
-  keystream of repetition `e` therefore starts its counter at
-  `vole_salt | (e << 16)` rather than at zero, leaving the low 16 bits for the
-  block counter. `crypto.py`, `sdith.py`, `vole.py`.
+- The seed tree and the VOLE keystream are both salted with `TweakSalt`
+  (Algorithm 5): the low 24 bits of the salt carry the tweak, and the top bits
+  carry a prefix that separates the two. round2 xor-ed the tweak into the salt
+  instead. `sdith.compute_tweaked_salts` builds the two prefixed salts once;
+  each call then ORs its own tweak into the cleared low field. The seed tree uses
+  `2*node_idx`, and repetition `e` of the VOLE keystream starts at `e << 16`,
+  which leaves the low 16 bits for the block counter. `crypto.py`, `params.py`,
+  `sdith.py`, `vole.py`.
 - alpha_1 is dropped from the signature: it is still hashed into `h_piop`, but
   only alpha_2..alpha_d are serialized and the verifier reconstructs alpha_1.
   `sdith.py`.
@@ -32,18 +32,6 @@ short/fast).
 
 Sizes: pk 70/98/132, sk 147/208/275, sig 3721/8484/15147 (short variants).
 
-## Deliberate divergence from the draft
-
-The draft feeds only the top `theta = ceil(log2(tau*N)) + 2` bits of the salt
-into the seed tree (`Trunc_theta`) and never hashes the salt anywhere else, so
-the remaining salt bits are unbound and the signature is malleable (flip a low
-salt bit, still verifies). round2 avoided this by mixing the whole salt into
-every seed-tree node. To keep that property we hash the full salt into
-`hash_aux` (`sdith.py`), which binds all lambda salt bits through
-`hash_lines` and `hash_piop`. This changes the bytes relative to a literal
-reading of `../round3-draft.pdf` (Alg 8, line 14) and should be reconciled with
-the spec authors.
-
 ## Proof-of-work variants
 
 Each category has two grinding variants, matching the C reference
@@ -56,8 +44,8 @@ Each category has two grinding variants, matching the C reference
   `p0,p1,k0,k1` from `SHAKE(0x05 || h_piop)`, grind `c0=Enc(k0,p0)`,
   `c1=Enc(k1,p1)` over a 32-bit counter until the low w bits of `c0 xor c1` are
   zero, then `delta0 = SHAKE(0x06 || h_piop || ctr || c0 || c1)`. The cipher
-  variant also sets the most-significant salt bit in the seed tree for domain
-  separation. `crypto.py`, `params.py`, `sdith.py`.
+  variant reserves the most-significant salt bit for the proof of work, so its
+  `TweakSalt` prefix moves down one bit. `crypto.py`, `params.py`, `sdith.py`.
 
 The cipher-pow sets reuse the base parameters (same keys), so pk/sk are
 identical to the base set; only the signature differs.
