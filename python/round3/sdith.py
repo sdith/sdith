@@ -3,9 +3,11 @@ SDitH round 3 — Python Reference Implementation
 
 Syndrome-Decoding-in-the-Head: a post-quantum signature scheme based on the
 syndrome decoding problem over F2, using the VOLEitH framework. This tracks
-the round-3 spec (../round3-draft.pdf), built on the round2 implementation.
+the round-3 spec (../../docs/sdith-v3.0.pdf), built on the round2
+implementation.
 
-Supports all 6 parameter sets: CAT1/3/5 x SHORT/FAST.
+Supports all 6 parameter sets, CAT1/3/5 x SHORT/FAST, in both proof-of-work
+variants, so 12 sets in total.
 
 Dependencies: pycryptodome (AES-128 ECB, SHAKE128/256)
 
@@ -80,7 +82,7 @@ def compute_tweaked_salts(params, global_salt):
     prefix that separates the seed tree from the VOLE keystream: "1"/"0" for the
     shake-grinding sets, "01"/"00" for the cipher-grinding ones (which reserve
     the second bit for the proof of work). Mirrors compute_tweaked_salts in
-    src/vole_expansion.c. The salt hashed elsewhere (hash_aux) and serialized
+    src/vole_expansion.c. The salt hashed elsewhere (hash_com) and serialized
     into the signature stays the original global_salt.
     """
     body = (int.from_bytes(global_salt, 'little')

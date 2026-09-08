@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Per-function test-coverage auditor for the vole-sd library.
+"""Per-function test-coverage auditor for the SDitH library.
 
 Goal
 ----
@@ -344,7 +344,7 @@ def resolve_library(arg, repo_root):
 
 def build_parser():
     p = argparse.ArgumentParser(
-        description="Prove per-function test coverage of the vole-sd library.",
+        description="Prove per-function test coverage of the SDitH library.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     p.add_argument(
@@ -416,7 +416,7 @@ def main(argv):
 
     if not src_symbols:
         die(
-            "error: no src-origin exported symbols found; is %s the vole-sd "
+            "error: no src-origin exported symbols found; is %s the SDitH "
             "library and does src/ contain the sources?" % library
         )
 
@@ -448,7 +448,7 @@ def main(argv):
 
     # ---- report ----
     out = sys.stdout.write
-    out("vole-sd per-function coverage audit\n")
+    out("SDitH per-function coverage audit\n")
     out("  library : %s\n" % library)
     out("  src dir : %s\n" % src_dir)
     out("  tests   : %d file(s) in %s\n" % (len(test_files), test_dir))

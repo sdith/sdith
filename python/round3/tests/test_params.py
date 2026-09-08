@@ -3,9 +3,9 @@ L5 - parameter / spec conformance.
 
 Re-derives every value in params.py independently from the primitive inputs
 (lambda, kappa, tau, rsd_w, rsd_n, mux_arities, ...) using the spec
-(round3-draft.pdf) sections 4.2/4.3, and compares to the Params object. The
-sk-order bug and an earlier stale-size caveat show params is error-prone, so
-this recomputes rather than trusting the constructor.
+(docs/sdith-v3.0.pdf) sections 4.2/4.3, and compares to the Params object. It
+recomputes rather than trusting the constructor, so that a mistake in params.py
+cannot make the test agree with itself.
 """
 import math
 
